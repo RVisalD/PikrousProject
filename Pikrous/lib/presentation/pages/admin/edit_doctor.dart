@@ -2,57 +2,85 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:pikrous/api/endpoint/doctor_endpoint.dart';
-import 'package:pikrous/helper/utils/colors.dart';
-import 'package:pikrous/presentation/pages/home.dart';
+import 'package:pikrous/presentation/pages/doctors/view_all_doctor.dart';
 
-import '../../../helper/utils/constants.dart';
+import '../../../helper/utils/colors.dart';
 import 'package:http/http.dart' as http;
 
-class CreateDoctor extends StatefulWidget {
-  const CreateDoctor({super.key});
+import '../../../helper/utils/constants.dart';
+
+class EditDoctor extends StatefulWidget {
+  final int id;
+  final String name;
+  final String email;
+  final String password;
+  final String descrption;
+  final String experienceYear;
+  final String expertise;
+  const EditDoctor({
+    Key? key,
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.password,
+    required this.descrption,
+    required this.experienceYear,
+    required this.expertise,
+  }) : super(key: key);
 
   @override
-  State<CreateDoctor> createState() => _CreateDoctorState();
+  State<EditDoctor> createState() => _EditDoctorState();
 }
 
-class _CreateDoctorState extends State<CreateDoctor> {
-  createDoctor(String name, String email, String password, String expertise,
-      String experienceYear, String description, context) async {
-    final response = await http.post(
-      Uri.parse(apiLink + DoctorEndPoint.createdoctor),
+final TextEditingController _expertiseController = TextEditingController();
+final TextEditingController _passwordController = TextEditingController();
+final TextEditingController _yearExperienceController = TextEditingController();
+final TextEditingController _emailController = TextEditingController();
+final TextEditingController _descriptionController = TextEditingController();
+final TextEditingController _nameController = TextEditingController();
+
+bool showPassword = true;
+
+class _EditDoctorState extends State<EditDoctor> {
+  updatedoctor() async {
+    final response = await http.put(
+      Uri.parse(apiLink + DoctorEndPoint.editdoctor(widget.id)),
       headers: <String, String>{
         'Content-Type': 'application/json',
       },
       body: jsonEncode(<String, String>{
-        'name': name,
-        'email': email,
-        'expertise': expertise,
-        'description': description,
-        'experience_year': experienceYear,
-        'password': password,
+        'email': _emailController.text,
+        'name': _nameController.text,
+        'password': _passwordController.text,
+        'description': _descriptionController.text,
+        'experience_year': _yearExperienceController.text,
+        'expertise': _expertiseController.text
       }),
     );
+
     if (response.statusCode == 200) {
+      print("User data updated in the database");
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const HomePage()));
-      print("Success");
+          context, MaterialPageRoute(builder: (context) => ViewALlDoctors()));
     } else {
-      print('Something Wrong!!!');
+      print("Failed to update user data: ${response.statusCode}");
     }
   }
 
-  final TextEditingController _expertiseController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _yearExperienceController =
-      TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-
-  bool showPassword = true;
-
   @override
   Widget build(BuildContext context) {
+    @override
+    void initState() {
+      super.initState();
+      // Set initial values to the controllers
+      _nameController.text = widget.name;
+      _emailController.text = widget.email;
+      _expertiseController.text = widget.expertise;
+      _descriptionController.text = widget.descrption;
+      _yearExperienceController.text = widget.experienceYear;
+      _passwordController.text = widget.password;
+    }
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primaryColor,
@@ -86,8 +114,8 @@ class _CreateDoctorState extends State<CreateDoctor> {
               ),
               child: TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter your name',
+                decoration: InputDecoration(
+                  hintText: widget.name,
                   border: InputBorder.none,
                 ),
               ),
@@ -123,8 +151,8 @@ class _CreateDoctorState extends State<CreateDoctor> {
               ),
               child: TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter your doctor email',
+                decoration: InputDecoration(
+                  hintText: widget.email,
                   border: InputBorder.none,
                 ),
               ),
@@ -160,8 +188,8 @@ class _CreateDoctorState extends State<CreateDoctor> {
               ),
               child: TextField(
                 controller: _expertiseController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter their expertise',
+                decoration:  InputDecoration(
+                  hintText: widget.expertise,
                   border: InputBorder.none,
                 ),
               ),
@@ -197,8 +225,8 @@ class _CreateDoctorState extends State<CreateDoctor> {
               ),
               child: TextField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter their description',
+                decoration: InputDecoration(
+                  hintText: widget.descrption,
                   border: InputBorder.none,
                 ),
               ),
@@ -234,8 +262,8 @@ class _CreateDoctorState extends State<CreateDoctor> {
               ),
               child: TextField(
                 controller: _yearExperienceController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter the Doctor years of experience',
+                decoration: InputDecoration(
+                  hintText: widget.experienceYear,
                   border: InputBorder.none,
                 ),
               ),
@@ -282,7 +310,7 @@ class _CreateDoctorState extends State<CreateDoctor> {
                     icon: Icon(
                         showPassword ? Icons.visibility : Icons.visibility_off),
                   ),
-                  hintText: 'Enter the password for the doctor',
+                  hintText: 'Enter the new password for the doctor',
                   border: InputBorder.none,
                 ),
               ),
@@ -315,14 +343,7 @@ class _CreateDoctorState extends State<CreateDoctor> {
                   return;
                 }
                 setState(() {
-                  createDoctor(
-                      _nameController.text,
-                      _emailController.text,
-                      _passwordController.text,
-                      _expertiseController.text,
-                      _yearExperienceController.text,
-                      _descriptionController.text,
-                      context);
+                  updatedoctor();
                 });
               },
               child: Container(
@@ -333,7 +354,7 @@ class _CreateDoctorState extends State<CreateDoctor> {
                 height: 50,
                 child: const Center(
                   child: Text(
-                    'Create Doctor Account',
+                    'Save Changes',
                     style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,

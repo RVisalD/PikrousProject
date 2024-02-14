@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:pikrous/api/endpoint/doctor_endpoint.dart';
 import 'package:pikrous/helper/utils/colors.dart';
 import 'package:http/http.dart' as http;
+import 'package:pikrous/presentation/pages/admin/edit_doctor.dart';
 
 import '../../../api/endpoint/home_endpoint.dart';
 import '../../../helper/utils/constants.dart';
@@ -17,6 +20,11 @@ class ViewALlDoctors extends StatefulWidget {
 }
 
 List<String> names = [];
+List<String> passwords = [];
+List<String> experienceYears = [];
+List<String> emails = [];
+List<String> descriptions = [];
+List<int> ids = [];
 List<String> expertise = [];
 dynamic userData;
 
@@ -45,9 +53,25 @@ class _ViewALlDoctorsState extends State<ViewALlDoctors> {
         setState(() {
           if (data.isNotEmpty && data[0] is List) {
             List<dynamic> doctors = data[0];
-
+            ids = doctors.map((item) => item['id'] ?? '').cast<int>().toList();
             names = doctors
                 .map((item) => item['name'] ?? '')
+                .cast<String>()
+                .toList();
+            passwords = doctors
+                .map((item) => item['password'] ?? '')
+                .cast<String>()
+                .toList();
+            emails = doctors
+                .map((item) => item['email'] ?? '')
+                .cast<String>()
+                .toList();
+            experienceYears = doctors
+                .map((item) => item['experience_year'] ?? '')
+                .cast<String>()
+                .toList();
+            descriptions = doctors
+                .map((item) => item['expertise'] ?? '')
                 .cast<String>()
                 .toList();
             expertise = doctors
@@ -67,6 +91,28 @@ class _ViewALlDoctorsState extends State<ViewALlDoctors> {
       }
     } catch (error) {
       print('Error fetching data: $error');
+    }
+  }
+
+  deleteAccount(int id, context) async {
+    final response = await http.delete(
+      Uri.parse(apiLink + DoctorEndPoint.deletedoctor(id)),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(<String, int>{
+        'id': id,
+      }),
+    );
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ViewALlDoctors()),
+      );
+      log('Correct!!!');
+    } else {
+      log('incorrect');
     }
   }
 
@@ -103,21 +149,57 @@ class _ViewALlDoctorsState extends State<ViewALlDoctors> {
                           children: [
                             SlidableAction(
                               backgroundColor:
-                                  Color.fromARGB(255, 138, 47, 154),
+                                  const Color.fromARGB(255, 138, 47, 154),
                               foregroundColor: Colors.white,
                               icon: Icons.edit,
-                              onPressed: (context) {},
+                              onPressed: (context) {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => EditDoctor(
+                                              id: ids[index], name: names[index], email: emails[index], password: passwords[index],descrption: descriptions[index],experienceYear: experienceYears[index],expertise: expertise[index],
+                                            )));
+                              },
                             ),
                             SlidableAction(
                               backgroundColor: const Color(0xFFFE4A49),
                               foregroundColor: Colors.white,
                               icon: Icons.delete,
-                              onPressed: (context) {},
+                              onPressed: (context) {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text("Delete Doctor"),
+                                      content: const Text(
+                                          "Are you sure you want to delete this doctor?"),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context)
+                                                .pop(); // Close the dialog
+                                          },
+                                          child: const Text("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            // Call the deleteAccount function
+                                            deleteAccount(ids[index], context);
+                                            Navigator.of(context)
+                                                .pop(); // Close the dialog
+                                          },
+                                          child: const Text("Delete"),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
                             ),
                           ],
                         ),
                         child: Container(
-                          color: Color(0XFFFEEEEEE),
+                          color: const Color(0XFFFEEEEEE),
                           width: MediaQuery.of(context).size.width,
                           height: 140,
                           child: Row(

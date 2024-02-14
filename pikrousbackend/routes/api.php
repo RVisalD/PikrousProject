@@ -29,4 +29,8 @@ Route::put('/editAccount/{id}', [AuthController::class, 'editAccount']);
 // Main Page API Route
 Route::get('/alldoctor', [MainController::class, 'alldoctor']);
 
-Route::post('createdoctor', [MainController::class, 'createdoctor']);
+
+// Doctor Page API Route
+Route::post('/createdoctor', [MainController::class, 'createdoctor']);
+Route::delete('/deletedoctor/{id}', [MainController::class, 'deletedoctor']);
+Route::put('/editdoctor/{id}', [MainController::class, 'editdoctor']);
